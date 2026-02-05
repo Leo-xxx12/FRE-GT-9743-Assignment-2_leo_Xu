@@ -98,33 +98,6 @@ class IndexFixingsManager(Registry):
             this_map : dict = self.get(index)
             this_map.pop(Date(date))
 
-class DataConventionRegFunction(Registry):
-
-    def __new__(cls) -> Self:
-        return super().__new__(cls, '', cls.__name__)
-
-    def register(self, key : Any, value : Any) -> None:
-        super().register(key, value)
-        self._map[key] = value
-
-class DataConventionRegistry(Registry):
-
-    def __new__(cls) -> Self:
-        return super().__new__(cls, 'data_conventions', 'DataConevention')
-    
-    def register(self, key : Any, value : Any) -> None:
-        value_ = value.copy()
-        super().register(key, value_)
-        type = value_['type']
-        value_.pop('type')
-        func = DataConventionRegFunction().get(type)
-        self._map[key] = func(key, value_)
-
-    def display_all_data_conventions(self) -> pd.DataFrame:
-        to_print = []
-        for k, v in self._map.items():
-            to_print.append([k, v.name])
-        return pd.DataFrame(to_print, columns=['Name', 'Type'])
 
 class DataIdentifierRegistry(Registry):
 

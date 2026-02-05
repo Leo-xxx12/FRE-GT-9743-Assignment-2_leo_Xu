@@ -5,7 +5,7 @@ from fixedincomelib.market.basics import *
 from fixedincomelib.market.registries import IndexRegistry, DataConventionRegistry
 from fixedincomelib.market.data_conventions import (
     CompoundingMethod,
-    DataConventionRFRFuture,
+    # DataConventionRFRFuture,
 )
 from fixedincomelib.market import (
     Currency,
@@ -14,7 +14,7 @@ from fixedincomelib.market import (
     HolidayConvention,
     DataConventionRegistry,
     IndexRegistry,
-    DataConventionRFRFuture,
+    # DataConventionRFRFuture,
 )
 from fixedincomelib.product.utilities import LongOrShort, PayOrReceive
 from fixedincomelib.product.product_interfaces import (

@@ -4,9 +4,13 @@ import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional, Any
-from .utils import get_config_folder
+from OptionStrategyRegistry.data.strategies import OptionStrategy
 
 logger = logging.getLogger(__name__)
+import os
+
+def get_config_folder():
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "configs")
 
 
 class ProblemType(Enum):
@@ -63,3 +67,50 @@ class Registry:
 
     def list_registry_keys(self):
         return list(self._registry.keys())
+class OptionStrategyRegistry:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._registry = {}
+            cls._instance._load_defaults()
+        return cls._instance
+
+    def _load_defaults(self):
+        # configs/strategies.yaml (relative to OptionStrategyRegistry folder)
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        yaml_path = os.path.join(base_dir, "configs", "strategies.yaml")
+
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+
+        # data is a dict: { name: {OPT_TYPE:..., DELTA_STRIKE:..., WEIGHT:...}, ... }
+        for name, d in data.items():
+            self._registry[name] = OptionStrategy(
+                d["OPT_TYPE"],
+                d["DELTA_STRIKE"],
+                d["WEIGHT"],
+            )
+
+    def register(self, name, strategy_input):
+        # strategy_input can be dict or list/tuple
+        if isinstance(strategy_input, dict):
+            strat = OptionStrategy(
+                strategy_input["OPT_TYPE"],
+                strategy_input["DELTA_STRIKE"],
+                strategy_input["WEIGHT"],
+            )
+        elif isinstance(strategy_input, (list, tuple)):
+            # expect [OPT_TYPE_list, DELTA_STRIKE_list, WEIGHT_list]
+            strat = OptionStrategy(strategy_input[0], strategy_input[1], strategy_input[2])
+        else:
+            raise TypeError("strategy_input must be a dict or a list/tuple")
+
+        self._registry[name] = strat
+
+    def list_registry_keys(self):
+        return list(self._registry.keys())
+
+    def get(self, name):
+        return self._registry.get(name, None)

@@ -6,12 +6,17 @@ import pandas as pd
 from scipy.stats import norm
 from typing import Optional, Tuple
 from abc import ABC, abstractmethod
-from ..utilities import get_config_folder, Registry
 from .definitions import OptionPayoff
 
 
 logger = logging.getLogger(__name__)
+def get_config_folder():
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "configs")
 
+class Registry:
+    def __init__(self):
+        if not hasattr(self, "_registry"):
+            self._registry = {}
 
 ### Option Strategy Class that Supports Arithemtics (see demo)
 class OptionStrategy:
@@ -166,5 +171,45 @@ class OptionStrategy:
 
 ### Option Strategy Registry
 class OptionStrategyRegistry(Registry):
+    _instance = None
 
-### TODO
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._registry = {}
+            cls._instance._load_defaults()
+        return cls._instance
+
+    def _load_defaults(self):
+        config_folder = get_config_folder()
+        yaml_path = os.path.join(config_folder, "strategies.yaml")
+
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+
+        for name, content in data.items():
+            self._registry[name] = OptionStrategy.createFromDict(name, content)
+
+    def register(self, name: str, strategy_input):
+
+        if isinstance(strategy_input, dict):
+            strat = OptionStrategy.createFromDict(name, strategy_input)
+
+        elif isinstance(strategy_input, (list, tuple)):
+            strat = OptionStrategy.createFromList(
+                name,
+                strategy_input[0],
+                strategy_input[1],
+                strategy_input[2],
+            )
+
+        else:
+            raise TypeError("strategy_input must be dict or list/tuple")
+
+        self._registry[name] = strat
+
+    def list_registry_keys(self):
+        return list(self._registry.keys())
+
+    def get(self, name: str):
+        return self._registry.get(name)
